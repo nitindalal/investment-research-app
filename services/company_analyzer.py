@@ -423,29 +423,26 @@ class CompanyAnalyzer:
         }
     
     def search_companies(self, query: str) -> List[Dict[str, Any]]:
-        """Search for companies by name or symbol"""
+        """Search for companies by name or symbol using Yahoo Finance's public search API for autocomplete."""
         try:
-            # This would typically use a company database or API
-            # For now, return a simple search using yfinance
+            search_url = f"https://query2.finance.yahoo.com/v1/finance/search?q={query}"
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+            }
+            resp = requests.get(search_url, headers=headers, timeout=5)
             results = []
-            
-            # Try direct ticker lookup
-            try:
-                ticker = yf.Ticker(query.upper())
-                info = ticker.info
-                if info and info.get('regularMarketPrice'):
-                    results.append({
-                        'symbol': info.get('symbol'),
-                        'name': info.get('longName', info.get('shortName')),
-                        'sector': info.get('sector', 'Unknown')
-                    })
-            except:
-                pass
-            
+            if resp.status_code == 200:
+                data = resp.json()
+                for quote in data.get('quotes', []):
+                    if quote.get('quoteType') == 'EQUITY' and 'symbol' in quote:
+                        results.append({
+                            'symbol': quote['symbol'],
+                            'name': quote.get('shortname', quote.get('longname', quote['symbol'])),
+                            'sector': quote.get('sector', 'Unknown')
+                        })
             return results
-            
         except Exception as e:
-            logger.error(f"Error searching companies: {str(e)}")
+            logger.error(f"Error searching companies for autocomplete: {str(e)}")
             return []
     
     def generate_recommendation(self, financial_data: Dict, market_data: Dict, 

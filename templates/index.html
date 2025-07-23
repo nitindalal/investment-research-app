@@ -360,13 +360,14 @@
                         
                         <div class="row justify-content-center">
                             <div class="col-md-8">
-                                <div class="input-group mb-3">
+                                <div class="input-group mb-3" style="position: relative;">
                                     <input type="text" class="form-control search-box" id="companyInput" 
-                                           placeholder="Enter company name or stock symbol (e.g., AAPL, Apple, Microsoft)">
+                                           placeholder="Enter company name or stock symbol (e.g., AAPL, Apple, Microsoft)" autocomplete="off">
                                     <button class="btn btn-analyze" type="button" onclick="analyzeCompany()">
                                         <i class="fas fa-chart-bar me-2"></i>
                                         Analyze
                                     </button>
+                                    <div id="autocomplete-list" class="list-group" style="position: absolute; z-index: 1000; width: 100%; top: 100%; left: 0;"></div>
                                 </div>
                             </div>
                         </div>
@@ -597,6 +598,98 @@
     <script>
         let currentAnalysis = null;
         let charts = {};
+        let autocompleteTimeout = null;
+        const companyInput = document.getElementById('companyInput');
+        const autocompleteList = document.getElementById('autocomplete-list');
+        let currentSuggestions = [];
+        let selectedSuggestionIndex = -1;
+
+        companyInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            clearTimeout(autocompleteTimeout);
+            selectedSuggestionIndex = -1;
+            if (!query) {
+                autocompleteList.innerHTML = '';
+                autocompleteList.style.display = 'none';
+                currentSuggestions = [];
+                return;
+            }
+            autocompleteTimeout = setTimeout(() => {
+                fetch(`/api/companies/search?q=${encodeURIComponent(query)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        autocompleteList.innerHTML = '';
+                        currentSuggestions = data.slice(0, 8);
+                        if (currentSuggestions.length === 0) {
+                            autocompleteList.style.display = 'none';
+                            return;
+                        }
+                        currentSuggestions.forEach((item, idx) => {
+                            const el = document.createElement('button');
+                            el.type = 'button';
+                            el.className = 'list-group-item list-group-item-action';
+                            el.textContent = `${item.symbol} - ${item.name}`;
+                            el.onclick = () => {
+                                companyInput.value = item.symbol;
+                                autocompleteList.innerHTML = '';
+                                autocompleteList.style.display = 'none';
+                                analyzeCompany();
+                            };
+                            el.onmouseenter = () => {
+                                setActiveSuggestion(idx);
+                            };
+                            autocompleteList.appendChild(el);
+                        });
+                        autocompleteList.style.display = 'block';
+                    })
+                    .catch(() => {
+                        autocompleteList.innerHTML = '';
+                        autocompleteList.style.display = 'none';
+                        currentSuggestions = [];
+                    });
+            }, 200);
+        });
+
+        companyInput.addEventListener('keydown', function(e) {
+            if (!currentSuggestions.length || autocompleteList.style.display === 'none') return;
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setActiveSuggestion(selectedSuggestionIndex + 1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setActiveSuggestion(selectedSuggestionIndex - 1);
+            } else if (e.key === 'Enter') {
+                if (selectedSuggestionIndex >= 0 && selectedSuggestionIndex < currentSuggestions.length) {
+                    companyInput.value = currentSuggestions[selectedSuggestionIndex].symbol;
+                    autocompleteList.innerHTML = '';
+                    autocompleteList.style.display = 'none';
+                    analyzeCompany();
+                    e.preventDefault();
+                }
+            }
+        });
+
+        function setActiveSuggestion(idx) {
+            const items = autocompleteList.querySelectorAll('.list-group-item');
+            if (!items.length) return;
+            if (selectedSuggestionIndex >= 0 && selectedSuggestionIndex < items.length) {
+                items[selectedSuggestionIndex].classList.remove('active');
+            }
+            if (idx < 0) idx = items.length - 1;
+            if (idx >= items.length) idx = 0;
+            selectedSuggestionIndex = idx;
+            items[selectedSuggestionIndex].classList.add('active');
+            items[selectedSuggestionIndex].scrollIntoView({ block: 'nearest' });
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!autocompleteList.contains(e.target) && e.target !== companyInput) {
+                autocompleteList.innerHTML = '';
+                autocompleteList.style.display = 'none';
+                currentSuggestions = [];
+                selectedSuggestionIndex = -1;
+            }
+        });
 
         function analyzeCompany() {
             const companyInput = document.getElementById('companyInput').value.trim();
