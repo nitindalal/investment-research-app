@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investment Research Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --light-bg: #f8f9fa;
+            --dark-bg: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: rgba(44, 62, 80, 0.95) !important;
+            backdrop-filter: blur(10px);
+        }
+
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            max-width: 1400px;
+        }
+
+        .search-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .search-box {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 15px 20px;
+            color: white;
+            font-size: 18px;
+        }
+
+        .search-box::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .search-box:focus {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-analyze {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            border: none;
+            border-radius: 15px;
+            padding: 15px 30px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(231, 76, 60, 0.3);
+        }
+
+        .analysis-section {
+            padding: 30px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .metric-title {
+            color: var(--primary-color);
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .metric-title i {
+            margin-right: 10px;
+            color: var(--secondary-color);
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .metric-change {
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .metric-change.positive {
+            background: rgba(39, 174, 96, 0.1);
+            color: var(--success-color);
+        }
+
+        .metric-change.negative {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--accent-color);
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--secondary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .recommendation-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .recommendation-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .recommendation-badge.buy {
+            background: rgba(39, 174, 96, 0.2);
+            color: #2ecc71;
+        }
+
+        .recommendation-badge.hold {
+            background: rgba(243, 156, 18, 0.2);
+            color: #f39c12;
+        }
+
+        .recommendation-badge.sell {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+        }
+
+        .progress-bar-custom {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            height: 8px;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.high {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+        }
+
+        .progress-fill.medium {
+            background: linear-gradient(45deg, #f39c12, #f1c40f);
+        }
+
+        .progress-fill.low {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            border-bottom-color: var(--secondary-color);
+            color: var(--secondary-color);
+        }
+
+        .tab:hover {
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .swot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .swot-item {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .swot-item.strengths {
+            border-left-color: var(--success-color);
+        }
+
+        .swot-item.weaknesses {
+            border-left-color: var(--accent-color);
+        }
+
+        .swot-item.opportunities {
+            border-left-color: var(--warning-color);
+        }
+
+        .swot-item.threats {
+            border-left-color: #9b59b6;
+        }
+
+        .swot-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        .swot-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .swot-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .swot-list li:last-child {
+            border-bottom: none;
+        }
+
+        .table {
+            table-layout: auto;
+            width: 100%;
+            word-break: break-word;
+        }
+        .table th, .table td {
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            max-width: 120px;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .search-section {
+                padding: 20px 15px;
+            }
+            
+            .analysis-section {
+                padding: 20px 15px;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-chart-line me-2"></i>
+                Investment Research Platform
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container-fluid">
+        <div class="main-container">
+            <!-- Search Section -->
+            <div class="search-section">
+                <div class="row justify-content-center">
+                    <div class="col-md-8 text-center">
+                        <h1 class="mb-4">
+                            <i class="fas fa-search me-3"></i>
+                            Research Any Company
+                        </h1>
+                        <p class="lead mb-4">Get comprehensive investment analysis including financial metrics, competitive position, and valuation insights</p>
+                        
+                        <div class="row justify-content-center">
+                            <div class="col-md-8">
+                                <div class="input-group mb-3">
+                                    <input type="text" class="form-control search-box" id="companyInput" 
+                                           placeholder="Enter company name or stock symbol (e.g., AAPL, Apple, Microsoft)">
+                                    <button class="btn btn-analyze" type="button" onclick="analyzeCompany()">
+                                        <i class="fas fa-chart-bar me-2"></i>
+                                        Analyze
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Section -->
+            <div class="loading" id="loadingSection">
+                <div class="spinner"></div>
+                <h4>Analyzing company data...</h4>
+                <p>This may take a few moments as we gather comprehensive financial and market data.</p>
+            </div>
+
+            <!-- Analysis Results -->
+            <div class="analysis-section" id="analysisSection" style="display: none;">
+                <!-- Company Overview -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="metric-card">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h2 id="companyName" class="metric-title">
+                                        <i class="fas fa-building"></i>
+                                        Company Name
+                                    </h2>
+                                    <p id="companyDescription" class="text-muted">Company description will appear here...</p>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <div class="recommendation-badge" id="recommendationBadge">HOLD</div>
+                                    <div class="metric-value" id="currentPrice">$0.00</div>
+                                    <div class="metric-change" id="priceChange">0.00%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <div class="tab active" onclick="showTab('overview')">
+                        <i class="fas fa-chart-pie me-2"></i>Overview
+                    </div>
+                    <div class="tab" onclick="showTab('financials')">
+                        <i class="fas fa-calculator me-2"></i>Financials
+                    </div>
+                    <div class="tab" onclick="showTab('valuation')">
+                        <i class="fas fa-dollar-sign me-2"></i>Valuation
+                    </div>
+                    <div class="tab" onclick="showTab('competition')">
+                        <i class="fas fa-trophy me-2"></i>Competition
+                    </div>
+                    <div class="tab" onclick="showTab('sentiment')">
+                        <i class="fas fa-heart me-2"></i>Sentiment
+                    </div>
+                </div>
+
+                <!-- Tab Contents -->
+                <div id="overviewTab" class="tab-content active">
+                    <!-- Key Metrics -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-title">
+                                    <i class="fas fa-chart-line"></i>Market Cap
+                                </div>
+                                <div class="metric-value" id="marketCap">$0B</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-title">
+                                    <i class="fas fa-percentage"></i>P/E Ratio
+                                </div>
+                                <div class="metric-value" id="peRatio">0.00</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-title">
+                                    <i class="fas fa-arrow-up"></i>ROE
+                                </div>
+                                <div class="metric-value" id="roe">0.00%</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-title">
+                                    <i class="fas fa-chart-area"></i>Beta
+                                </div>
+                                <div class="metric-value" id="beta">0.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recommendation Card -->
+                    <div class="recommendation-card">
+                        <h4><i class="fas fa-lightbulb me-2"></i>Investment Recommendation</h4>
+                        <div id="recommendationDetails">
+                            <p>Analysis will provide detailed investment recommendation based on comprehensive financial and market analysis.</p>
+                        </div>
+                        <div class="progress-bar-custom">
+                            <div class="progress-fill" id="confidenceBar" style="width: 0%"></div>
+                        </div>
+                        <small>Confidence Level: <span id="confidenceLevel">Medium</span></small>
+                    </div>
+
+                    <!-- SWOT Analysis -->
+                    <div class="chart-container">
+                        <h4 class="metric-title">
+                            <i class="fas fa-balance-scale me-2"></i>SWOT Analysis
+                        </h4>
+                        <div class="swot-grid" id="swotAnalysis">
+                            <div class="swot-item strengths">
+                                <div class="swot-title">Strengths</div>
+                                <ul class="swot-list" id="strengthsList">
+                                    <li>Loading...</li>
+                                </ul>
+                            </div>
+                            <div class="swot-item weaknesses">
+                                <div class="swot-title">Weaknesses</div>
+                                <ul class="swot-list" id="weaknessesList">
+                                    <li>Loading...</li>
+                                </ul>
+                            </div>
+                            <div class="swot-item opportunities">
+                                <div class="swot-title">Opportunities</div>
+                                <ul class="swot-list" id="opportunitiesList">
+                                    <li>Loading...</li>
+                                </ul>
+                            </div>
+                            <div class="swot-item threats">
+                                <div class="swot-title">Threats</div>
+                                <ul class="swot-list" id="threatsList">
+                                    <li>Loading...</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="financialsTab" class="tab-content">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h4 class="metric-title">
+                                    <i class="fas fa-chart-bar me-2"></i>Revenue Growth
+                                </h4>
+                                <canvas id="revenueChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h4 class="metric-title">
+                                    <i class="fas fa-chart-line me-2"></i>Profitability Metrics
+                                </h4>
+                                <canvas id="profitabilityChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="valuationTab" class="tab-content">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h4 class="metric-title">
+                                    <i class="fas fa-calculator me-2"></i>DCF Valuation
+                                </h4>
+                                <div id="dcfResults">
+                                    <p>DCF analysis will be displayed here...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h4 class="metric-title">
+                                    <i class="fas fa-balance-scale me-2"></i>Peer Comparison
+                                </h4>
+                                <div id="peerComparison" style="overflow-x: auto; max-width: 100%;">
+                                    <p>Peer comparison will be displayed here...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="competitionTab" class="tab-content">
+                    <div class="chart-container">
+                        <h4 class="metric-title">
+                            <i class="fas fa-trophy me-2"></i>Competitive Analysis
+                        </h4>
+                        <div id="competitiveAnalysis">
+                            <p>Competitive analysis will be displayed here...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sentimentTab" class="tab-content">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h4 class="metric-title">
+                                    <i class="fas fa-heart me-2"></i>Market Sentiment
+                                </h4>
+                                <canvas id="sentimentChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h4 class="metric-title">
+                                    <i class="fas fa-newspaper me-2"></i>News Sentiment
+                                </h4>
+                                <div id="newsSentiment">
+                                    <p>News sentiment analysis will be displayed here...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <script>
+        let currentAnalysis = null;
+        let charts = {};
+
+        function analyzeCompany() {
+            const companyInput = document.getElementById('companyInput').value.trim();
+            
+            if (!companyInput) {
+                alert('Please enter a company name or stock symbol');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loadingSection').style.display = 'block';
+            document.getElementById('analysisSection').style.display = 'none';
+
+            // Make API call
+            fetch('/api/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    company_input: companyInput
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                
+                currentAnalysis = data;
+                displayAnalysis(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while analyzing the company');
+            })
+            .finally(() => {
+                document.getElementById('loadingSection').style.display = 'none';
+                document.getElementById('analysisSection').style.display = 'block';
+            });
+        }
+
+        function displayAnalysis(data) {
+            // Company info
+            const companyInfo = data.company_info;
+            document.getElementById('companyName').textContent = companyInfo.name;
+            document.getElementById('companyDescription').textContent = companyInfo.description || 'No description available';
+            document.getElementById('currentPrice').textContent = `$${companyInfo.market_cap ? (companyInfo.market_cap / 1e9).toFixed(2) + 'B' : 'N/A'}`;
+
+            // Market data
+            const marketData = data.market_data;
+            if (marketData) {
+                document.getElementById('marketCap').textContent = marketData.market_cap ? `$${(marketData.market_cap / 1e9).toFixed(2)}B` : 'N/A';
+                document.getElementById('peRatio').textContent = marketData.pe_ratio ? marketData.pe_ratio.toFixed(2) : 'N/A';
+                document.getElementById('beta').textContent = marketData.beta ? marketData.beta.toFixed(2) : 'N/A';
+            }
+
+            // Financial data
+            const financialData = data.financial_data;
+            if (financialData && financialData.profitability_metrics) {
+                const roe = financialData.profitability_metrics.roe;
+                document.getElementById('roe').textContent = roe ? (roe * 100).toFixed(2) + '%' : 'N/A';
+            }
+
+            // Recommendation
+            const recommendation = data.investment_recommendation;
+            if (recommendation) {
+                const badge = document.getElementById('recommendationBadge');
+                badge.textContent = recommendation.recommendation;
+                badge.className = `recommendation-badge ${recommendation.recommendation.toLowerCase()}`;
+                
+                document.getElementById('confidenceLevel').textContent = recommendation.confidence;
+                
+                const confidenceBar = document.getElementById('confidenceBar');
+                const confidencePercent = recommendation.score * 100;
+                confidenceBar.style.width = confidencePercent + '%';
+                confidenceBar.className = `progress-fill ${recommendation.confidence.toLowerCase()}`;
+                
+                document.getElementById('recommendationDetails').innerHTML = `
+                    <p><strong>Score:</strong> ${(recommendation.score * 100).toFixed(1)}%</p>
+                    <p><strong>Risk Level:</strong> ${recommendation.risk_level}</p>
+                    <p><strong>Key Factors:</strong></p>
+                    <ul>
+                        ${recommendation.factors.map(factor => `<li>${factor}</li>`).join('')}
+                    </ul>
+                `;
+            }
+
+            // SWOT Analysis
+            const competitiveAnalysis = data.competitive_analysis;
+            if (competitiveAnalysis && competitiveAnalysis.market_position) {
+                const swot = competitiveAnalysis.market_position.swot_analysis;
+                if (swot) {
+                    document.getElementById('strengthsList').innerHTML = swot.strengths.map(s => `<li>${s}</li>`).join('') || '<li>No data available</li>';
+                    document.getElementById('weaknessesList').innerHTML = swot.weaknesses.map(w => `<li>${w}</li>`).join('') || '<li>No data available</li>';
+                    document.getElementById('opportunitiesList').innerHTML = swot.opportunities.map(o => `<li>${o}</li>`).join('') || '<li>No data available</li>';
+                    document.getElementById('threatsList').innerHTML = swot.threats.map(t => `<li>${t}</li>`).join('') || '<li>No data available</li>';
+                }
+            }
+
+            // DCF Valuation
+            const valuations = data.valuations || {};
+            const dcf = valuations.dcf_detailed || {};
+            let dcfHtml = '';
+            if (dcf.error) {
+                dcfHtml = `<p class='text-danger'>${dcf.error}</p>`;
+            } else if (Object.keys(dcf).length > 0) {
+                dcfHtml = `
+                    <ul>
+                        <li><strong>DCF Value per Share:</strong> $${dcf.dcf_value_per_share ? dcf.dcf_value_per_share.toFixed(2) : (dcf.dcf_value || 'N/A')}</li>
+                        <li><strong>Current Price:</strong> $${dcf.current_price ? dcf.current_price.toFixed(2) : 'N/A'}</li>
+                        <li><strong>Upside Potential:</strong> ${dcf.upside_potential ? (dcf.upside_potential * 100).toFixed(2) + '%' : 'N/A'}</li>
+                        <li><strong>Free Cash Flow:</strong> $${dcf.free_cash_flow ? dcf.free_cash_flow.toLocaleString() : 'N/A'}</li>
+                        <li><strong>Terminal Value:</strong> $${dcf.terminal_value ? dcf.terminal_value.toLocaleString() : 'N/A'}</li>
+                        <li><strong>Enterprise Value:</strong> $${dcf.enterprise_value ? dcf.enterprise_value.toLocaleString() : 'N/A'}</li>
+                        <li><strong>Equity Value:</strong> $${dcf.equity_value ? dcf.equity_value.toLocaleString() : 'N/A'}</li>
+                    </ul>
+                    <h6>Assumptions:</h6>
+                    <ul>
+                        <li><strong>Growth Rate:</strong> ${(dcf.assumptions && dcf.assumptions.growth_rate) ? (dcf.assumptions.growth_rate * 100).toFixed(2) + '%' : 'N/A'}</li>
+                        <li><strong>Discount Rate:</strong> ${(dcf.assumptions && dcf.assumptions.discount_rate) ? (dcf.assumptions.discount_rate * 100).toFixed(2) + '%' : 'N/A'}</li>
+                        <li><strong>Risk-Free Rate:</strong> ${(dcf.assumptions && dcf.assumptions.risk_free_rate) ? (dcf.assumptions.risk_free_rate * 100).toFixed(2) + '%' : 'N/A'}</li>
+                        <li><strong>Market Risk Premium:</strong> ${(dcf.assumptions && dcf.assumptions.market_risk_premium) ? (dcf.assumptions.market_risk_premium * 100).toFixed(2) + '%' : 'N/A'}</li>
+                    </ul>
+                `;
+            } else {
+                dcfHtml = '<p>No DCF valuation data available.</p>';
+            }
+            document.getElementById('dcfResults').innerHTML = dcfHtml;
+
+            // Peer Comparison
+            const peer = valuations.peer_comparison || {};
+            let peerHtml = '';
+            if (peer.error) {
+                peerHtml = `<p class='text-danger'>${peer.error}</p>`;
+            } else if (peer.peer_comparison && peer.peer_comparison.length > 0) {
+                peerHtml = `<table class='table table-sm'><thead><tr><th>Symbol</th><th>Name</th><th>P/E</th><th>P/B</th><th>P/S</th><th>EV/EBITDA</th><th>ROE</th><th>ROA</th></tr></thead><tbody>`;
+                peer.peer_comparison.forEach(p => {
+                    peerHtml += `<tr><td>${p.symbol}</td><td>${p.name}</td><td>${p.pe_ratio ?? 'N/A'}</td><td>${p.pb_ratio ?? 'N/A'}</td><td>${p.ps_ratio ?? 'N/A'}</td><td>${p.ev_ebitda ?? 'N/A'}</td><td>${p.roe ? (p.roe * 100).toFixed(2) + '%' : 'N/A'}</td><td>${p.roa ? (p.roa * 100).toFixed(2) + '%' : 'N/A'}</td></tr>`;
+                });
+                peerHtml += `</tbody></table>`;
+                if (peer.valuation_percentile) {
+                    peerHtml += `<h6>Percentile Rankings:</h6><ul>`;
+                    Object.entries(peer.valuation_percentile).forEach(([metric, value]) => {
+                        peerHtml += `<li><strong>${metric.toUpperCase()}:</strong> ${value.toFixed(1)} percentile</li>`;
+                    });
+                    peerHtml += `</ul>`;
+                }
+            } else {
+                peerHtml = '<p>No peer comparison data available.</p>';
+            }
+            document.getElementById('peerComparison').innerHTML = peerHtml;
+
+            // Competitive Analysis - Porter's Five Forces
+            const compAnalysis = data.competitive_analysis;
+            let compHtml = '';
+            if (compAnalysis && compAnalysis.porters_five_forces) {
+                const forces = compAnalysis.porters_five_forces;
+                compHtml += `<h5>Porter's Five Forces Analysis</h5><ul>`;
+                compHtml += `<li><strong>Threat of New Entrants:</strong> ${forces.threat_of_new_entrants}</li>`;
+                compHtml += `<li><strong>Bargaining Power of Suppliers:</strong> ${forces.bargaining_power_of_suppliers}</li>`;
+                compHtml += `<li><strong>Bargaining Power of Buyers:</strong> ${forces.bargaining_power_of_buyers}</li>`;
+                compHtml += `<li><strong>Threat of Substitutes:</strong> ${forces.threat_of_substitutes}</li>`;
+                compHtml += `<li><strong>Rivalry Among Competitors:</strong> ${forces.rivalry_among_competitors}</li>`;
+                compHtml += `</ul>`;
+            } else {
+                compHtml = '<p>No competitive analysis data available.</p>';
+            }
+            document.getElementById('competitiveAnalysis').innerHTML = compHtml;
+
+            // News Sentiment
+            const newsSentiment = data.sentiment_data && data.sentiment_data.news_sentiment;
+            let newsHtml = '';
+            if (newsSentiment) {
+                newsHtml += `<p>${newsSentiment.summary || 'No summary available.'}</p>`;
+                if (newsSentiment.sources && newsSentiment.sources.length > 0) {
+                    newsHtml += `<h6>Sources:</h6><ul>`;
+                    newsSentiment.sources.forEach(src => {
+                        newsHtml += `<li>${src}</li>`;
+                    });
+                    newsHtml += `</ul>`;
+                }
+            } else {
+                newsHtml = '<p>No news sentiment data available.</p>';
+            }
+            document.getElementById('newsSentiment').innerHTML = newsHtml;
+
+            // Create charts
+            createCharts(data);
+        }
+
+        function createCharts(data) {
+            // Revenue Chart
+            const financialData = data.financial_data;
+            if (financialData && financialData.historical_data) {
+                const revenueData = financialData.historical_data.revenue_5y;
+                if (revenueData && revenueData.length > 0) {
+                    const ctx = document.getElementById('revenueChart').getContext('2d');
+                    if (charts.revenueChart) {
+                        charts.revenueChart.destroy();
+                    }
+                    charts.revenueChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['5Y Ago', '4Y Ago', '3Y Ago', '2Y Ago', '1Y Ago'],
+                            datasets: [{
+                                label: 'Revenue ($B)',
+                                data: revenueData.map(r => r / 1e9),
+                                borderColor: '#3498db',
+                                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Sentiment Chart
+            const sentimentData = data.sentiment_data;
+            if (sentimentData && sentimentData.news_sentiment) {
+                const ctx = document.getElementById('sentimentChart').getContext('2d');
+                if (charts.sentimentChart) {
+                    charts.sentimentChart.destroy();
+                }
+                charts.sentimentChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Positive', 'Neutral', 'Negative'],
+                        datasets: [{
+                            data: [
+                                sentimentData.news_sentiment.positive_articles,
+                                sentimentData.news_sentiment.neutral_articles,
+                                sentimentData.news_sentiment.negative_articles
+                            ],
+                            backgroundColor: ['#27ae60', '#f39c12', '#e74c3c']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        // Enter key to search
+        document.getElementById('companyInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analyzeCompany();
+            }
+        });
+    </script>
+</body>
+</html> 
