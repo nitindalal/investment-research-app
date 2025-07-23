@@ -17,15 +17,53 @@ class CompanyAnalyzer:
         self.base_url = "https://www.alphavantage.co/query"
         
     def get_company_info(self, company_input: str) -> Optional[Dict[str, Any]]:
-        """Get basic company information by name or symbol"""
+        """Get basic company information by name or symbol. Tries yfinance first, then resolves name to symbol using Yahoo Finance search API if needed."""
         try:
             # Try to get info using yfinance
             ticker = yf.Ticker(company_input)
             info = ticker.info
-            
+
             if not info or info.get('regularMarketPrice') is None:
+                # Try to resolve company name to symbol using Yahoo Finance search API
+                search_url = f"https://query2.finance.yahoo.com/v1/finance/search?q={company_input}"
+                try:
+                    resp = requests.get(search_url, timeout=5)
+                    logger.info(f"Yahoo search API response for '{company_input}': {resp.status_code}")
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        logger.info(f"Yahoo API quotes for '{company_input}': {data.get('quotes')}")
+                        if data.get('quotes'):
+                            for quote in data['quotes']:
+                                logger.info(f"Trying quote: {quote}")
+                                if quote.get('quoteType') == 'EQUITY' and 'symbol' in quote:
+                                    resolved_symbol = quote['symbol']
+                                    logger.info(f"Trying resolved symbol: {resolved_symbol}")
+                                    ticker = yf.Ticker(resolved_symbol)
+                                    info = ticker.info
+                                    if info and info.get('regularMarketPrice') is not None:
+                                        logger.info(f"Resolved symbol '{resolved_symbol}' for input '{company_input}'")
+                                        break
+                                    else:
+                                        logger.info(f"Symbol '{resolved_symbol}' did not return valid info.")
+                                        info = None
+                                        continue
+                            else:
+                                logger.warning(f"No valid equity symbol found for '{company_input}' in Yahoo API results.")
+                                return None
+                        else:
+                            logger.warning(f"No quotes found in Yahoo API for '{company_input}'")
+                            return None
+                    else:
+                        logger.error(f"Yahoo search API failed for '{company_input}' with status {resp.status_code}")
+                        return None
+                except Exception as e:
+                    logger.error(f"Error resolving symbol for {company_input}: {str(e)}")
+                    return None
+
+            if not info or info.get('regularMarketPrice') is None:
+                logger.warning(f"No valid info found for '{company_input}' after all attempts.")
                 return None
-                
+
             return {
                 'symbol': info.get('symbol', company_input.upper()),
                 'name': info.get('longName', info.get('shortName', 'Unknown')),
@@ -39,7 +77,7 @@ class CompanyAnalyzer:
                 'employees': info.get('fullTimeEmployees'),
                 'ceo': info.get('companyOfficers', [{}])[0].get('name', 'Unknown') if info.get('companyOfficers') else 'Unknown'
             }
-            
+
         except Exception as e:
             logger.error(f"Error getting company info for {company_input}: {str(e)}")
             return None

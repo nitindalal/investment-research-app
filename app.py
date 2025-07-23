@@ -8,12 +8,14 @@ from services.sentiment_analyzer import SentimentAnalyzer
 from services.market_data_service import MarketDataService
 import logging
 import math
+import numpy as np
 
 # Load environment variables
 load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
+logging.getLogger("services.company_analyzer").setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
@@ -32,6 +34,10 @@ def clean_nans(obj):
         return [clean_nans(x) for x in obj]
     elif isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
         return None
+    elif isinstance(obj, (np.integer,)):
+        return int(obj)
+    elif isinstance(obj, (np.floating,)):
+        return float(obj)
     else:
         return obj
 
